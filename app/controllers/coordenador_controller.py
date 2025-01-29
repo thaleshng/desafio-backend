@@ -2,7 +2,7 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from app.models.pessoa import Coordenador
 from app.services.pessoa_service import CoordenadorService
-from app.repositories.pessoa_repository import CoordenadorRepository, MatriculaRepository
+from app.repositories.pessoa_repository import CoordenadorRepository, MatriculaRepository, EstagiarioRepository
 from typing import Optional
 
 router = APIRouter()
@@ -14,7 +14,8 @@ def get_db(request: Request):
 async def create_coordenador(coordenador: Coordenador, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
     matricula_repository = MatriculaRepository(db, "coordenador_counter")
-    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
+    estagiario_repository = EstagiarioRepository(db)
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository, estagiario_repository)
 
     existing_coordenador = await coordenador_service.get_coordenadores({"cpf": coordenador.cpf})
     if existing_coordenador:
@@ -43,15 +44,21 @@ async def get_coordenadores(nome: Optional[str] = None, cpf: Optional[str] = Non
 
     coordenador_repository = CoordenadorRepository(db)
     matricula_repository = MatriculaRepository(db, "coordenador_counter")
-    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
-    return await coordenador_service.get_coordenadores(filtros)
+    estagiario_repository = EstagiarioRepository(db)
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository, estagiario_repository)
+    coordenadores = await coordenador_service.get_coordenadores(filtros)
+
+    for coordenador in coordenadores:
+        estagiarios = await estagiario_repository.get_estagiarios({"setor": coordenador["setor"]})
+        coordenador["estagiarios"] = estagiarios
+    return coordenadores
 
 @router.put("/coordenadores/{coordenador_id}")
 async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
     matricula_repository = MatriculaRepository(db, "coordenador_counter")
-    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
-    
+    estagiario_repository = EstagiarioRepository(db)
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository, estagiario_repository)
     existing_coordenador = await coordenador_repository.get_coordenadores({"_id": ObjectId(coordenador_id)})
     
     if not existing_coordenador:
@@ -79,7 +86,8 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
 async def delete_coordenador(coordenador_id: str, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
     matricula_repository = MatriculaRepository(db, "coordenador_counter")
-    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
+    estagiario_repository = EstagiarioRepository(db)
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository, estagiario_repository)
     deleted_count = await coordenador_service.delete_coordenador(coordenador_id)
 
     if deleted_count == 0:

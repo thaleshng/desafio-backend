@@ -19,9 +19,10 @@ class PessoaService:
         return await self.repository.delete_pessoa(pessoa_id)
     
 class CoordenadorService(PessoaService):
-    def __init__(self, repository: CoordenadorRepository, matricula_repository: MatriculaRepository):
+    def __init__(self, repository: CoordenadorRepository, matricula_repository: MatriculaRepository, estagiario_repository: EstagiarioRepository):
         self.repository = repository
         self.matricula_repository = matricula_repository
+        self.estagiario_repository = estagiario_repository
 
     async def create_coordenador(self, coordenador: Coordenador):
         return await self.repository.create_coordenador(coordenador)
