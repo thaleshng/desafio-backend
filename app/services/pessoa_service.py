@@ -1,4 +1,4 @@
-from app.repositories.pessoa_repository import PessoaRepository, CoordenadorRepository
+from app.repositories.pessoa_repository import PessoaRepository, CoordenadorRepository, EstagiarioRepository
 from app.models.pessoa import PessoaBase, Coordenador, Estagiario
 from typing import Optional
 
@@ -33,3 +33,19 @@ class CoordenadorService(PessoaService):
     
     async def delete_coordenador(self, coordenador_id: str):
         return await self.repository.delete_coordenador(coordenador_id)
+    
+class EstagiarioService(EstagiarioRepository):
+    def __init__(self, repository: EstagiarioRepository):
+        self.repository = repository
+
+    async def create_estagiario(self, estagiario: Estagiario):
+        return await self.repository.create_estagiario(estagiario)
+    
+    async def get_estagiarios(self, filtros: Optional[dict] = None):
+        return await self.repository.get_estagiarios(filtros)
+    
+    async def update_estagiario(self, estagiario_id: str, estagiario: Estagiario):
+        return await self.repository.update_estagiario(estagiario_id, estagiario)
+    
+    async def delete_estagiario(self, estagiario_id: str):
+        return await self.repository.delete_estagiario(estagiario_id)
