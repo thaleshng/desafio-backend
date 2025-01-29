@@ -42,5 +42,5 @@ class Coordenador(PessoaBase):
 
 class Estagiario(PessoaBase):
     matricula: str
-    data_entrada: str
+    data_entrada: datetime
     setor: str
