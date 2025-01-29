@@ -28,12 +28,6 @@ class PessoaBase(BaseModel):
                     detail=f"O campo '{field_name}' é obrigatório."
                 )
         return values
-    
-    def dict(self, *args, **kwargs):
-        data_dict = super().dict(*args, **kwargs)
-        if 'data_nascimento' in data_dict:
-            data_dict['data_nascimento'] = data_dict['data_nascimento'].date().isoformat()  # Retorna como string no formato 'YYYY-MM-DD'
-        return data_dict
 
 class Coordenador(PessoaBase):
     matricula: str

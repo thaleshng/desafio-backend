@@ -31,8 +31,8 @@ class PessoaRepository:
         return result.deleted_count
     
 class CoordenadorRepository:
-    def __init__(self, db):
-        self.db = db["people_db"]
+    def __init__(self, db: AsyncIOMotorDatabase):
+        self.db = db["coordenadores"]
 
     async def create_coordenador(self, coordenador: Coordenador):
         result = await self.db.coordenadores.insert_one(coordenador.model_dump())
