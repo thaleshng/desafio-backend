@@ -1,7 +1,7 @@
 import re
 from fastapi import HTTPException
 from pydantic import BaseModel, field_validator, model_validator
-from typing import List
+from typing import List, Optional
 from datetime import date, datetime
 
 class PessoaBase(BaseModel):
@@ -30,11 +30,11 @@ class PessoaBase(BaseModel):
         return values
 
 class Coordenador(PessoaBase):
-    matricula: str
+    matricula: Optional[str] = None
     setor: str
     estagiarios: List[PessoaBase] = []
 
 class Estagiario(PessoaBase):
-    matricula: str
+    matricula: Optional[str] = None
     data_entrada: datetime
     setor: str

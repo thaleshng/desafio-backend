@@ -1,7 +1,8 @@
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from app.models.pessoa import Estagiario
 from app.services.pessoa_service import EstagiarioService
-from app.repositories.pessoa_repository import EstagiarioRepository
+from app.repositories.pessoa_repository import EstagiarioRepository, MatriculaRepository
 from typing import Optional
 
 router = APIRouter()
@@ -12,7 +13,8 @@ def get_db(request: Request):
 @router.post("/estagiarios")
 async def create_estagiario(estagiario: Estagiario, db = Depends(get_db)):
     estagiario_repository = EstagiarioRepository(db)
-    estagiario_service = EstagiarioService(estagiario_repository)
+    matricula_repository = MatriculaRepository(db, "estagiario_counter")
+    estagiario_service = EstagiarioService(estagiario_repository, matricula_repository)
 
     existing_estagiario = await estagiario_service.get_estagiarios({"cpf": estagiario.cpf})
     if existing_estagiario:
@@ -42,13 +44,29 @@ async def get_estagiarios(nome: Optional[str] = None, cpf: Optional[str] = None,
         filtros["data_entrada"] = data_entrada
 
     estagiario_repository = EstagiarioRepository(db)
-    estagiario_service = EstagiarioService(estagiario_repository)
+    matricula_repository = MatriculaRepository(db, "estagiario_counter")
+    estagiario_service = EstagiarioService(estagiario_repository, matricula_repository)
     return await estagiario_service.get_estagiarios(filtros)
 
 @router.put("/estagiarios/{estagiario_id}")
 async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Depends(get_db)):
     estagiario_repository = EstagiarioRepository(db)
-    estagiario_service = EstagiarioService(estagiario_repository)
+    matricula_repository = MatriculaRepository(db, "estagiario_counter")
+    estagiario_service = EstagiarioService(estagiario_repository, matricula_repository)
+
+    existing_estagiario = await estagiario_repository.get_estagiarios({"_id": ObjectId(estagiario_id)})
+    
+    if not existing_estagiario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Estagiário com ID {estagiario_id} não encontrado para atualização"
+        )
+    
+    existing_estagiario = existing_estagiario[0]
+
+    if estagiario.matricula is None or estagiario.matricula == '':
+        estagiario.matricula = existing_estagiario['matricula']
+
     updated_count = await estagiario_service.update_estagiario(estagiario_id, estagiario)
 
     if updated_count == 0:
@@ -62,7 +80,8 @@ async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Dep
 @router.delete("/estagiarios/{estagiario_id}")
 async def delete_estagiario(estagiario_id: str, db = Depends(get_db)):
     estagiario_repository = EstagiarioRepository(db)
-    estagiario_service = EstagiarioService(estagiario_repository)
+    matricula_repository = MatriculaRepository(db, "estagiario_counter")
+    estagiario_service = EstagiarioService(estagiario_repository, matricula_repository)
     deleted_count = await estagiario_service.delete_estagiario(estagiario_id)
 
     if deleted_count == 0:

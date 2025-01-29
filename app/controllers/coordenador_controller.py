@@ -1,7 +1,8 @@
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from app.models.pessoa import Coordenador
 from app.services.pessoa_service import CoordenadorService
-from app.repositories.pessoa_repository import CoordenadorRepository
+from app.repositories.pessoa_repository import CoordenadorRepository, MatriculaRepository
 from typing import Optional
 
 router = APIRouter()
@@ -12,7 +13,8 @@ def get_db(request: Request):
 @router.post("/coordenadores")
 async def create_coordenador(coordenador: Coordenador, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
-    coordenador_service = CoordenadorService(coordenador_repository)
+    matricula_repository = MatriculaRepository(db, "coordenador_counter")
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
 
     existing_coordenador = await coordenador_service.get_coordenadores({"cpf": coordenador.cpf})
     if existing_coordenador:
@@ -40,13 +42,29 @@ async def get_coordenadores(nome: Optional[str] = None, cpf: Optional[str] = Non
         filtros["setor"] = setor
 
     coordenador_repository = CoordenadorRepository(db)
-    coordenador_service = CoordenadorService(coordenador_repository)
+    matricula_repository = MatriculaRepository(db, "coordenador_counter")
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
     return await coordenador_service.get_coordenadores(filtros)
 
 @router.put("/coordenadores/{coordenador_id}")
 async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
-    coordenador_service = CoordenadorService(coordenador_repository)
+    matricula_repository = MatriculaRepository(db, "coordenador_counter")
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
+    
+    existing_coordenador = await coordenador_repository.get_coordenadores({"_id": ObjectId(coordenador_id)})
+    
+    if not existing_coordenador:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Coordenador com ID {coordenador_id} não encontrado para atualização"
+        )
+    
+    existing_coordenador = existing_coordenador[0]
+
+    if coordenador.matricula is None or coordenador.matricula == '':
+        coordenador.matricula = existing_coordenador['matricula']
+
     updated_count = await coordenador_service.update_coordenador(coordenador_id, coordenador)
 
     if updated_count == 0:
@@ -60,7 +78,8 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
 @router.delete("/coordenadores/{coordenador_id}")
 async def delete_coordenador(coordenador_id: str, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
-    coordenador_service = CoordenadorService(coordenador_repository)
+    matricula_repository = MatriculaRepository(db, "coordenador_counter")
+    coordenador_service = CoordenadorService(coordenador_repository, matricula_repository)
     deleted_count = await coordenador_service.delete_coordenador(coordenador_id)
 
     if deleted_count == 0:

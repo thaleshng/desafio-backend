@@ -33,8 +33,11 @@ class PessoaRepository:
 class CoordenadorRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db["coordenadores"]
+        self.matricula_repository = MatriculaRepository(db, "coordenador_counter")
 
     async def create_coordenador(self, coordenador: Coordenador):
+        coordenador.matricula = await self.matricula_repository.get_matricula_formatada("COO")
+
         result = await self.db.coordenadores.insert_one(coordenador.model_dump())
         return str(result.inserted_id)
     
@@ -60,8 +63,11 @@ class CoordenadorRepository:
 class EstagiarioRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db["estagiarios"]
+        self.matricula_repository = MatriculaRepository(db, "estagiario_counter")
 
     async def create_estagiario(self, estagiario: Estagiario):
+        estagiario.matricula = await self.matricula_repository.get_matricula_formatada("EST")
+
         result = await self.db.estagiarios.insert_one(estagiario.model_dump())
         return str(result.inserted_id)
 
@@ -83,3 +89,21 @@ class EstagiarioRepository:
             { "_id": ObjectId(estagiario_id) }
         )
         return result.deleted_count
+    
+class MatriculaRepository:
+    def __init__(self, db: AsyncIOMotorDatabase, counter_collection: str):
+        self.db = db[counter_collection]
+    
+    async def get_next_matricula(self):
+        counter = await self.db.find_one_and_update(
+            {"_id": "counter"},
+            {"$inc": {"counter": 1}},
+            upsert=True,
+            return_document=True
+        )
+        return counter['counter'] 
+    
+    async def get_matricula_formatada(self, prefix: str) -> str:
+        next_number = await self.get_next_matricula()
+        matricula = f"{prefix}{next_number:05d}"
+        return matricula
