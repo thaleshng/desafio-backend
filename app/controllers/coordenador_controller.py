@@ -24,6 +24,13 @@ async def create_coordenador(coordenador: Coordenador, db = Depends(get_db)):
             detail = "Já existe um Coordenador com esse CPF"
         )
     
+    existing_estagiario = await estagiario_repository.get_estagiarios({"cpf": coordenador.cpf})
+    if existing_estagiario:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Já existe um Estagiário com esse CPF"
+        )
+    
     coordenador_id = await coordenador_service.create_coordenador(coordenador)
     return {"message": "Coordenador adicionado com sucesso!", "coordenador_id": coordenador_id}
 
@@ -67,7 +74,20 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
             detail=f"Coordenador com ID {coordenador_id} não encontrado para atualização"
         )
     
-    existing_coordenador = existing_coordenador[0]
+    if coordenador.cpf != existing_coordenador[0]["cpf"]:
+        existing_coordenador_with_same_cpf = await coordenador_repository.get_coordenadores({"cpf": coordenador.cpf})
+        if existing_coordenador_with_same_cpf:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Já existe um Coordenador com esse CPF"
+            )
+        
+    existing_estagiario = await estagiario_repository.get_estagiarios({"cpf": coordenador.cpf})
+    if existing_estagiario:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Já existe um Estagiário com esse CPF"
+        )
 
     if coordenador.matricula is None or coordenador.matricula == '':
         coordenador.matricula = existing_coordenador['matricula']
