@@ -24,6 +24,13 @@ class PessoaRepository:
         )
         return result.modified_count
     
+    async def update_pessoa_by_cpf(self, old_cpf: str, new_cpf: str):
+        result = await self.db.pessoas.update_one(
+            {"cpf": old_cpf},
+            {"$set": {"cpf": new_cpf}}
+        )
+        return result.modified_count
+    
     async def delete_pessoa(self, pessoa_id: str):
         result = await self.db.pessoas.delete_one(
             { "_id": ObjectId(pessoa_id) }

@@ -121,6 +121,15 @@ async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Dep
             detail=f"Estagiário com ID {estagiario_id} não encontrado para atualização"
         )
     
+    if estagiario.cpf != existing_estagiario["cpf"]:
+        update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(existing_estagiario["cpf"], estagiario.cpf)
+
+        if update_pessoa_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Nenhuma pessoa encontrada com o CPF {existing_estagiario['cpf']} para atualização"
+            )
+    
     return { "message": "Registro atualizado com sucesso!" }
 
 @router.delete("/estagiarios/{estagiario_id}")

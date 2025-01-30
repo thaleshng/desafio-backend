@@ -80,7 +80,7 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
     estagiario_repository = EstagiarioRepository(db)
     pessoa_repository = PessoaRepository(db)
     coordenador_service = CoordenadorService(coordenador_repository, matricula_repository, estagiario_repository)
-    
+
     existing_coordenador = await coordenador_repository.get_coordenadores({"_id": ObjectId(coordenador_id)})
     
     if not existing_coordenador or len(existing_coordenador) == 0:
@@ -123,6 +123,15 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Coordenador com ID {coordenador_id} não encontrado para atualização"
         )
+    
+    if coordenador.cpf != existing_coordenador["cpf"]:
+        update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(existing_coordenador["cpf"], coordenador.cpf)
+
+        if update_pessoa_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Nenhuma pessoa encontrada com o CPF {existing_coordenador['cpf']} para atualização"
+            )
     
     return { "message": "Registro atualizado com sucesso!" }
 
