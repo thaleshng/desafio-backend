@@ -22,9 +22,10 @@ class CoordenadorRepository:
             coordenadores.append(coordenador)
         return coordenadores
     
-    async def update_coordenador(self, coordenador_id: str, coordenador: dict):
+    async def update_coordenador(self, coordenador_id: str, coordenador: dict): 
         result = await self.db.coordenadores.update_one(
-            { "_id": ObjectId(coordenador_id) }, { "$set": coordenador }
+            { "_id": ObjectId(coordenador_id) }, 
+            { "$set": coordenador } 
         )
         return result.modified_count
 

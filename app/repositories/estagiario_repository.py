@@ -22,9 +22,10 @@ class EstagiarioRepository:
             estagiarios.append(estagiario)
         return estagiarios
     
-    async def update_estagiario(self, estagiario_id: str, estagiario: dict):
+    async def update_estagiario(self, estagiario_id: str, estagiario: dict): 
         result = await self.db.estagiarios.update_one(
-            { "_id": ObjectId(estagiario_id) }, { "$set": estagiario }
+            { "_id": ObjectId(estagiario_id) }, 
+            { "$set": estagiario } 
         )
         return result.modified_count
 

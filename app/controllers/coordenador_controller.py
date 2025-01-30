@@ -91,47 +91,47 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
     
     existing_coordenador = existing_coordenador[0]
     
+    # Verifica se o novo CPF já existe em outras entidades
     if coordenador.cpf != existing_coordenador["cpf"]:
         existing_coordenador_with_same_cpf = await coordenador_repository.get_coordenadores({"cpf": coordenador.cpf})
-        if existing_coordenador_with_same_cpf:
+        existing_pessoa = await pessoa_repository.get_pessoas({"cpf": coordenador.cpf})
+        existing_estagiario = await estagiario_repository.get_estagiarios({"cpf": coordenador.cpf})
+        
+        if existing_coordenador_with_same_cpf or existing_pessoa or existing_estagiario:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Já existe um Coordenador com esse CPF"
+                detail="CPF já cadastrado em outra entidade"
             )
-        
-    existing_pessoa = await pessoa_repository.get_pessoas({"cpf": coordenador.cpf})
-    if existing_pessoa:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Já existe uma pessoa com esse CPF"
-        )
-        
-    existing_estagiario = await estagiario_repository.get_estagiarios({"cpf": coordenador.cpf})
-    if existing_estagiario:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Já existe um Estagiário com esse CPF"
-        )
 
+    # Mantém a matrícula se não for fornecida
     if coordenador.matricula is None or coordenador.matricula == '':
         coordenador.matricula = existing_coordenador['matricula']
 
+    # Atualiza o coordenador
     updated_count = await coordenador_service.update_coordenador(coordenador_id, coordenador)
-
     if updated_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Coordenador com ID {coordenador_id} não encontrado para atualização"
         )
     
-    if coordenador.cpf != existing_coordenador["cpf"]:
-        update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(existing_coordenador["cpf"], coordenador.cpf)
-
-        if update_pessoa_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Nenhuma pessoa encontrada com o CPF {existing_coordenador['cpf']} para atualização"
-            )
+    # Atualiza a pessoa correspondente com os novos dados
+    pessoa_data = PessoaBase(
+        nome_completo=coordenador.nome_completo,
+        cpf=coordenador.cpf,
+        data_nascimento=coordenador.data_nascimento
+    )
+    
+    update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(
+        existing_coordenador["cpf"],  # CPF original (antes da atualização)
+        pessoa_data  # Novos dados, incluindo possível novo CPF
+    )
+    
+    if update_pessoa_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Nenhuma pessoa encontrada com o CPF {existing_coordenador['cpf']} para atualização"
+        )
     
     return { "message": "Registro atualizado com sucesso!" }
 

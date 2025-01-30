@@ -16,7 +16,8 @@ class EstagiarioService(EstagiarioRepository):
         return await self.repository.get_estagiarios(filtros)
     
     async def update_estagiario(self, estagiario_id: str, estagiario: Estagiario):
-        return await self.repository.update_estagiario(estagiario_id, estagiario)
+        estagiario_dict = estagiario.model_dump()
+        return await self.repository.update_estagiario(estagiario_id, estagiario_dict)
     
     async def delete_estagiario(self, estagiario_id: str):
         return await self.repository.delete_estagiario(estagiario_id)

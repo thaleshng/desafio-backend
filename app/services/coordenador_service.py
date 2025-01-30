@@ -15,7 +15,8 @@ class CoordenadorService(CoordenadorRepository):
         return await self.repository.get_coordenadores(filtros)
     
     async def update_coordenador(self, coordenador_id: str, coordenador: Coordenador):
-        return await self.repository.update_coordenador(coordenador_id, coordenador)
+        coordenador_dict = coordenador.model_dump()
+        return await self.repository.update_coordenador(coordenador_id, coordenador_dict)
     
     async def delete_coordenador(self, coordenador_id: str):
         return await self.repository.delete_coordenador(coordenador_id)
