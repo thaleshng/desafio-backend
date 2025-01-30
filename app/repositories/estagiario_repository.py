@@ -22,9 +22,23 @@ class EstagiarioRepository:
             estagiarios.append(estagiario)
         return estagiarios
     
-    async def update_estagiario(self, estagiario_id: str, estagiario: Estagiario):
+    async def update_estagiario(self, estagiario_id: str, estagiario: dict):
         result = await self.db.estagiarios.update_one(
-            { "_id": ObjectId(estagiario_id) }, { "$set": estagiario.model_dump() }
+            { "_id": ObjectId(estagiario_id) }, { "$set": estagiario }
+        )
+        return result.modified_count
+
+    async def update_estagiario_by_cpf(self, old_cpf: str, new_cpf: str):
+        result = await self.db.estagiarios.update_many(
+            {"cpf": old_cpf},
+            {"$set": {"cpf": new_cpf}}
+        )
+        return result.modified_count
+    
+    async def update_estagiario_fields_by_cpf(self, cpf: str, update_data: dict):
+        result = await self.db.estagiarios.update_many(
+            {"cpf": cpf},
+            {"$set": update_data}
         )
         return result.modified_count
     
@@ -33,3 +47,8 @@ class EstagiarioRepository:
             { "_id": ObjectId(estagiario_id) }
         )
         return result.deleted_count
+    
+    async def delete_estagiario_by_cpf(self, cpf: str):
+        result = await self.db.estagiarios.delete_many({"cpf": cpf})
+        return result.deleted_count
+

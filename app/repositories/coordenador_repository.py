@@ -22,9 +22,23 @@ class CoordenadorRepository:
             coordenadores.append(coordenador)
         return coordenadores
     
-    async def update_coordenador(self, coordenador_id: str, coordenador: Coordenador):
+    async def update_coordenador(self, coordenador_id: str, coordenador: dict):
         result = await self.db.coordenadores.update_one(
-            { "_id": ObjectId(coordenador_id) }, { "$set": coordenador.model_dump() }
+            { "_id": ObjectId(coordenador_id) }, { "$set": coordenador }
+        )
+        return result.modified_count
+
+    async def update_coordenador_by_cpf(self, old_cpf: str, new_cpf: str):
+        result = await self.db.coordenadores.update_many(
+            {"cpf": old_cpf},
+            {"$set": {"cpf": new_cpf}}
+        )
+        return result.modified_count
+    
+    async def update_coordenador_fields_by_cpf(self, cpf: str, update_data: dict):
+        result = await self.db.coordenadores.update_many(
+            {"cpf": cpf},
+            {"$set": update_data}
         )
         return result.modified_count
     
@@ -32,4 +46,8 @@ class CoordenadorRepository:
         result = await self.db.coordenadores.delete_one(
             { "_id": ObjectId(coordenador_id) }
         )
+        return result.deleted_count
+    
+    async def delete_coordenador_by_cpf(self, cpf: str):
+        result = await self.db.coordenadores.delete_many({"cpf": cpf})
         return result.deleted_count

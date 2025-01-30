@@ -2,7 +2,7 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from app.models import PessoaBase
 from app.services import PessoaService
-from app.repositories import PessoaRepository
+from app.repositories import PessoaRepository, CoordenadorRepository, EstagiarioRepository
 from typing import Optional
 
 router = APIRouter()
@@ -45,39 +45,66 @@ async def get_pessoas(nome: Optional[str] = None, cpf: Optional[str] = None, dat
 async def update_pessoa(pessoa_id: str, pessoa: PessoaBase, db=Depends(get_db)):
     pessoa_repository = PessoaRepository(db)
     pessoa_service = PessoaService(pessoa_repository)
-
+    
     existing_pessoa = await pessoa_repository.get_pessoas({"_id": ObjectId(pessoa_id)})
-    
-    if not existing_pessoa or len(existing_pessoa) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Pessoa com ID {pessoa_id} não encontrado para atualização"
-        )
-    
-    existing_pessoa = existing_pessoa[0]
-    
-    if pessoa.cpf != existing_pessoa["cpf"]:
-        existing_pessoa_with_same_cpf = await pessoa_repository.get_pessoas({"cpf": pessoa.cpf})
-        if existing_pessoa_with_same_cpf:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Já existe uma pessoa com esse CPF"
-            )
-        
-    updated_count = await pessoa_service.update_pessoa(pessoa_id, pessoa)
 
-    if updated_count == 0:
+    if not existing_pessoa or len(existing_pessoa) == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Pessoa com ID {pessoa_id} não encontrada para atualização"
         )
-    
-    return { "message": "Registro Atualizado com sucesso!" }
+
+    existing_pessoa = existing_pessoa[0]
+
+    if pessoa.cpf != existing_pessoa["cpf"]:
+        update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(existing_pessoa["cpf"], pessoa.cpf)
+        if update_pessoa_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Nenhuma pessoa encontrada com o CPF {existing_pessoa['cpf']} para atualização"
+            )
+
+        coordenador_repository = CoordenadorRepository(db)
+        estagiario_repository = EstagiarioRepository(db)
+
+        await coordenador_repository.update_coordenador_by_cpf(existing_pessoa["cpf"], pessoa.cpf)
+        await estagiario_repository.update_estagiario_by_cpf(existing_pessoa["cpf"], pessoa.cpf)
+
+    coordenador_repository = CoordenadorRepository(db)
+    estagiario_repository = EstagiarioRepository(db)
+
+    await coordenador_repository.update_coordenador_fields_by_cpf(pessoa.cpf, {
+        "nome_completo": pessoa.nome_completo,
+        "data_nascimento": pessoa.data_nascimento
+    })
+
+    await estagiario_repository.update_estagiario_fields_by_cpf(pessoa.cpf, {
+        "nome_completo": pessoa.nome_completo,
+        "data_nascimento": pessoa.data_nascimento
+    })
+
+    await pessoa_service.update_pessoa(pessoa_id, pessoa) 
+
+    return { "message": "Registro atualizado com sucesso!" }
+
 
 @router.delete("/pessoas/{pessoa_id}")
 async def delete_pessoa(pessoa_id: str, db=Depends(get_db)):
     pessoa_repository = PessoaRepository(db)
+    coordenador_repository = CoordenadorRepository(db)
+    estagiario_repository = EstagiarioRepository(db)
     pessoa_service = PessoaService(pessoa_repository)
+
+    existing_pessoa = await pessoa_repository.get_pessoas({"_id": ObjectId(pessoa_id)})
+
+    if not existing_pessoa:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Pessoa com ID {pessoa_id} não encontrada para deleção"
+        )
+
+    cpf_pessoa = existing_pessoa[0]["cpf"]
+
     deleted_count = await pessoa_service.delete_pessoa(pessoa_id)
 
     if deleted_count == 0:
@@ -85,5 +112,13 @@ async def delete_pessoa(pessoa_id: str, db=Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Pessoa com ID {pessoa_id} não encontrada para deleção do registro"
         )
-    
-    return { "message": "Registro Deletado com sucesso!" }
+
+    deleted_coordenador_count = await coordenador_repository.delete_coordenador_by_cpf(cpf_pessoa)
+
+    deleted_estagiario_count = await estagiario_repository.delete_estagiario_by_cpf(cpf_pessoa)
+
+    return { 
+        "message": "Registro Deletado com sucesso!", 
+        "deleted_coordenador_count": deleted_coordenador_count, 
+        "deleted_estagiario_count": deleted_estagiario_count 
+    }
