@@ -29,3 +29,7 @@ class PessoaRepository:
             { "_id": ObjectId(pessoa_id) }
         )
         return result.deleted_count
+    
+    async def delete_pessoa_by_cpf(self, cpf: str):
+        result = await self.db.pessoas.delete_one({"cpf": cpf})
+        return result.deleted_count

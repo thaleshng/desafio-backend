@@ -5,6 +5,9 @@ from typing import List, Optional
 from datetime import datetime
 
 def validar_data(data: str) -> bool:
+    if isinstance(data, datetime):  # Se for um objeto datetime, converte para string
+        data = data.strftime('%Y-%m-%d')
+    
     if data and not re.match(r'\d{4}-\d{2}-\d{2}', data):
         raise HTTPException(
             status_code=422,
