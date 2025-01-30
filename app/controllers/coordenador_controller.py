@@ -10,7 +10,7 @@ router = APIRouter()
 def get_db(request: Request):
     return request.app.mongodb_db
 
-@router.post("/coordenadores")
+@router.post("/coordenadores", tags=["coordenadores"])
 async def create_coordenador(coordenador: Coordenador, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
     matricula_repository = MatriculaRepository(db, "coordenador_counter")
@@ -47,16 +47,14 @@ async def create_coordenador(coordenador: Coordenador, db = Depends(get_db)):
     coordenador_id = await coordenador_service.create_coordenador(coordenador)
     return {"message": "Coordenador adicionado com sucesso!", "coordenador_id": coordenador_id}
 
-@router.get("/coordenadores")
-async def get_coordenadores(nome: Optional[str] = None, cpf: Optional[str] = None, data_nascimento: Optional[str] = None, matricula: Optional[str] = None, setor: Optional[str] = None, db = Depends(get_db)):
+@router.get("/coordenadores", tags=["coordenadores"])
+async def get_coordenadores(nome: Optional[str] = None, cpf: Optional[str] = None, matricula: Optional[str] = None, setor: Optional[str] = None, db = Depends(get_db)):
     filtros = {}
 
     if nome:
         filtros["nome_completo"] = {"$regex": nome, "$options": "i"}
     if cpf:
         filtros["cpf"] = cpf
-    if data_nascimento:
-        filtros["data_nascimento"] = data_nascimento
     if matricula:
         filtros["matricula"] = matricula
     if setor:
@@ -73,7 +71,7 @@ async def get_coordenadores(nome: Optional[str] = None, cpf: Optional[str] = Non
         coordenador["estagiarios"] = estagiarios
     return coordenadores
 
-@router.put("/coordenadores/{coordenador_id}")
+@router.put("/coordenadores/{coordenador_id}", tags=["coordenadores"])
 async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
     matricula_repository = MatriculaRepository(db, "coordenador_counter")
@@ -131,7 +129,7 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
     
     return { "message": "Registro atualizado com sucesso!" }
 
-@router.delete("/coordenadores/{coordenador_id}")
+@router.delete("/coordenadores/{coordenador_id}", tags=["coordenadores"])
 async def delete_coordenador(coordenador_id: str, db = Depends(get_db)):
     coordenador_repository = CoordenadorRepository(db)
     matricula_repository = MatriculaRepository(db, "coordenador_counter")

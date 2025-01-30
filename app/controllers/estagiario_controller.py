@@ -10,7 +10,7 @@ router = APIRouter()
 def get_db(request: Request):
     return request.app.mongodb_db
 
-@router.post("/estagiarios")
+@router.post("/estagiarios", tags=["estagiarios"])
 async def create_estagiario(estagiario: Estagiario, db = Depends(get_db)):
     estagiario_repository = EstagiarioRepository(db)
     matricula_repository = MatriculaRepository(db, "estagiario_counter")
@@ -47,22 +47,18 @@ async def create_estagiario(estagiario: Estagiario, db = Depends(get_db)):
     estagiario_id = await estagiario_service.create_estagiario(estagiario)
     return {"message": "Estagiário adicionado com sucesso!", "estagiario_id": estagiario_id}
 
-@router.get("/estagiarios")
-async def get_estagiarios(nome: Optional[str] = None, cpf: Optional[str] = None, data_nascimento: Optional[str] = None, matricula: Optional[str] = None, setor: Optional[str] = None, data_entrada: Optional[str] = None, db = Depends(get_db)):
+@router.get("/estagiarios", tags=["estagiarios"])
+async def get_estagiarios(nome: Optional[str] = None, cpf: Optional[str] = None, matricula: Optional[str] = None, setor: Optional[str] = None, db = Depends(get_db)):
     filtros = {}
 
     if nome:
         filtros["nome_completo"] = {"$regex": nome, "$options": "i"}
     if cpf:
         filtros["cpf"] = cpf
-    if data_nascimento:
-        filtros["data_nascimento"] = data_nascimento
     if matricula:
         filtros["matricula"] = matricula
     if setor:
         filtros["setor"] = setor
-    if data_entrada:
-        filtros["data_entrada"] = data_entrada
 
     estagiario_repository = EstagiarioRepository(db)
     matricula_repository = MatriculaRepository(db, "estagiario_counter")
@@ -70,7 +66,7 @@ async def get_estagiarios(nome: Optional[str] = None, cpf: Optional[str] = None,
     estagiario_service = EstagiarioService(estagiario_repository, matricula_repository, coordenador_repository)
     return await estagiario_service.get_estagiarios(filtros)
 
-@router.put("/estagiarios/{estagiario_id}")
+@router.put("/estagiarios/{estagiario_id}", tags=["estagiarios"])
 async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Depends(get_db)):
     estagiario_repository = EstagiarioRepository(db)
     matricula_repository = MatriculaRepository(db, "estagiario_counter")
@@ -132,7 +128,7 @@ async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Dep
     
     return { "message": "Registro atualizado com sucesso!" }
 
-@router.delete("/estagiarios/{estagiario_id}")
+@router.delete("/estagiarios/{estagiario_id}", tags=["estagiarios"])
 async def delete_estagiario(estagiario_id: str, db = Depends(get_db)):
     estagiario_repository = EstagiarioRepository(db)
     matricula_repository = MatriculaRepository(db, "estagiario_counter")

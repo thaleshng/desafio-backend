@@ -10,7 +10,7 @@ router = APIRouter()
 def get_db(request: Request):
     return request.app.mongodb_db
 
-@router.post("/pessoas")
+@router.post("/pessoas", tags=["pessoas"])
 async def create_pessoa(pessoa: PessoaBase, db=Depends(get_db)):
     pessoa_repository = PessoaRepository(db)
     pessoa_service = PessoaService(pessoa_repository)
@@ -26,22 +26,20 @@ async def create_pessoa(pessoa: PessoaBase, db=Depends(get_db)):
 
     return { "message": "Registro Adicionado com Sucesso!", "pessoa_id": pessoa_id }
 
-@router.get("/pessoas")
-async def get_pessoas(nome: Optional[str] = None, cpf: Optional[str] = None, data_nascimento: Optional[str] = None, db=Depends(get_db)):
+@router.get("/pessoas", tags=["pessoas"])
+async def get_pessoas(nome: Optional[str] = None, cpf: Optional[str] = None, db=Depends(get_db)):
     filtros = {}
 
     if nome:
         filtros["nome_completo"] = {"$regex": nome, "$options": "i"}
     if cpf:
         filtros["cpf"] = cpf
-    if data_nascimento:
-        filtros["data_nascimento"] = data_nascimento
 
     pessoa_repository = PessoaRepository(db)
     pessoa_service = PessoaService(pessoa_repository)
     return await pessoa_service.get_pessoas(filtros)
 
-@router.put("/pessoas/{pessoa_id}")
+@router.put("/pessoas/{pessoa_id}", tags=["pessoas"])
 async def update_pessoa(pessoa_id: str, pessoa: PessoaBase, db=Depends(get_db)):
     pessoa_repository = PessoaRepository(db)
     pessoa_service = PessoaService(pessoa_repository)
@@ -108,7 +106,7 @@ async def update_pessoa(pessoa_id: str, pessoa: PessoaBase, db=Depends(get_db)):
     return { "message": "Registro atualizado com sucesso!" }
 
 
-@router.delete("/pessoas/{pessoa_id}")
+@router.delete("/pessoas/{pessoa_id}", tags=["pessoas"])
 async def delete_pessoa(pessoa_id: str, db=Depends(get_db)):
     pessoa_repository = PessoaRepository(db)
     coordenador_repository = CoordenadorRepository(db)

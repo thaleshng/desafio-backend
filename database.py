@@ -5,7 +5,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(
+    title="API Pessoas",
+    description="Esta API permite gerenciar pessoas, incluindo informações como nome, CPF e data de nascimento.",
+    version="1.0.0",
+    )
 
 @app.on_event("startup")
 async def startup_db():
