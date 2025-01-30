@@ -56,8 +56,28 @@ async def update_pessoa(pessoa_id: str, pessoa: PessoaBase, db=Depends(get_db)):
 
     existing_pessoa = existing_pessoa[0]
 
+    # Verificação de duplicidade de CPF
     if pessoa.cpf != existing_pessoa["cpf"]:
-        update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(existing_pessoa["cpf"], pessoa.cpf)
+        # Verifica se o novo CPF já existe em outra pessoa
+        pessoa_com_novo_cpf = await pessoa_repository.get_pessoas({
+            "cpf": pessoa.cpf,
+            "_id": {"$ne": ObjectId(pessoa_id)}  # Exclui o próprio registro
+        })
+        
+        if pessoa_com_novo_cpf:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Já existe outra pessoa com este CPF"
+            )
+
+    pessoa_data = PessoaBase(
+        nome_completo=pessoa.nome_completo,
+        cpf=pessoa.cpf,
+        data_nascimento=pessoa.data_nascimento
+    )
+
+    if pessoa.cpf != existing_pessoa["cpf"]:
+        update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(existing_pessoa["cpf"], pessoa_data)
         if update_pessoa_count == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

@@ -23,7 +23,7 @@ async def create_estagiario(estagiario: Estagiario, db = Depends(get_db)):
     if existing_pessoa:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Já existe uma pessoa com esse CPF"
+            detail="Já existe um registro cadastrado nesse CPF"
         )
         
     if not existing_pessoa:
@@ -78,7 +78,6 @@ async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Dep
     coordenador_repository = CoordenadorRepository(db)
     estagiario_service = EstagiarioService(estagiario_repository, matricula_repository, coordenador_repository)
 
-    # Verifica se o estagiário existe
     existing_estagiario = await estagiario_repository.get_estagiarios({"_id": ObjectId(estagiario_id)})
     if not existing_estagiario or len(existing_estagiario) == 0:
         raise HTTPException(
@@ -88,29 +87,25 @@ async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Dep
     
     existing_estagiario = existing_estagiario[0]
 
-    # Verifica se o novo CPF já existe em Estagiários
     if estagiario.cpf != existing_estagiario["cpf"]:
         existing_estagiario_with_same_cpf = await estagiario_repository.get_estagiarios({"cpf": estagiario.cpf})
         if existing_estagiario_with_same_cpf:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Já existe um Estagiário com esse CPF"
+                detail="CPF já cadastrado em outro registro"
             )
     
-    # Verifica se o novo CPF já existe em Pessoas ou Coordenadores
     existing_pessoa = await pessoa_repository.get_pessoas({"cpf": estagiario.cpf})
     existing_coordenador = await coordenador_repository.get_coordenadores({"cpf": estagiario.cpf})
     if existing_pessoa or existing_coordenador:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CPF já cadastrado em outra entidade"
+            detail="CPF já cadastrado em outro registro"
         )
 
-    # Mantém a matrícula se não for fornecida
     if estagiario.matricula is None or estagiario.matricula == '':
         estagiario.matricula = existing_estagiario['matricula']
 
-    # Atualiza o estagiário
     updated_count = await estagiario_service.update_estagiario(estagiario_id, estagiario)
     if updated_count == 0:
         raise HTTPException(
@@ -118,7 +113,6 @@ async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Dep
             detail=f"Estagiário com ID {estagiario_id} não encontrado para atualização"
         )
     
-    # Atualiza a pessoa correspondente com os novos dados
     pessoa_data = PessoaBase(
         nome_completo=estagiario.nome_completo,
         cpf=estagiario.cpf,
@@ -126,8 +120,8 @@ async def update_estagiario(estagiario_id: str, estagiario: Estagiario, db = Dep
     )
     
     update_pessoa_count = await pessoa_repository.update_pessoa_by_cpf(
-        existing_estagiario["cpf"],  # CPF original (antes da atualização)
-        pessoa_data  # Novos dados, incluindo possível novo CPF
+        existing_estagiario["cpf"],
+        pessoa_data  
     )
     
     if update_pessoa_count == 0:
