@@ -80,7 +80,6 @@ async def update_coordenadores(coordenador_id: str, coordenador: Coordenador, db
     estagiario_repository = EstagiarioRepository(db)
     pessoa_repository = PessoaRepository(db)
     coordenador_service = CoordenadorService(coordenador_repository, matricula_repository, estagiario_repository)
-    existing_coordenador = await coordenador_repository.get_coordenadores({"_id": ObjectId(coordenador_id)})
     
     existing_coordenador = await coordenador_repository.get_coordenadores({"_id": ObjectId(coordenador_id)})
     

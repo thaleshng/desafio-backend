@@ -1,3 +1,4 @@
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from app.models.models import PessoaBase
 from app.services import PessoaService
@@ -44,6 +45,25 @@ async def get_pessoas(nome: Optional[str] = None, cpf: Optional[str] = None, dat
 async def update_pessoa(pessoa_id: str, pessoa: PessoaBase, db=Depends(get_db)):
     pessoa_repository = PessoaRepository(db)
     pessoa_service = PessoaService(pessoa_repository)
+
+    existing_pessoa = await pessoa_repository.get_pessoas({"_id": ObjectId(pessoa_id)})
+    
+    if not existing_pessoa or len(existing_pessoa) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Pessoa com ID {pessoa_id} não encontrado para atualização"
+        )
+    
+    existing_pessoa = existing_pessoa[0]
+    
+    if pessoa.cpf != existing_pessoa["cpf"]:
+        existing_pessoa_with_same_cpf = await pessoa_repository.get_pessoas({"cpf": pessoa.cpf})
+        if existing_pessoa_with_same_cpf:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Já existe uma pessoa com esse CPF"
+            )
+        
     updated_count = await pessoa_service.update_pessoa(pessoa_id, pessoa)
 
     if updated_count == 0:
