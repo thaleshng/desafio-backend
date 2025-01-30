@@ -1,6 +1,6 @@
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from app.models.models import PessoaBase
+from app.models import PessoaBase
 from app.services import PessoaService
 from app.repositories import PessoaRepository
 from typing import Optional

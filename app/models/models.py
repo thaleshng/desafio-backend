@@ -1,27 +1,8 @@
 import re
 from fastapi import HTTPException
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import List, Optional
 from datetime import datetime
-
-def validar_data(data: str) -> bool:
-    if isinstance(data, datetime):  # Se for um objeto datetime, converte para string
-        data = data.strftime('%Y-%m-%d')
-    
-    if data and not re.match(r'\d{4}-\d{2}-\d{2}', data):
-        raise HTTPException(
-            status_code=422,
-            detail="Data inválida. O formato esperado é YYYY-MM-DD."
-        )
-    
-    try:
-        datetime.strptime(data, '%Y-%m-%d')  # Verifica se a data é válida no calendário
-    except ValueError:
-        raise HTTPException(
-            status_code=422,
-            detail="Data inválida. Mês ou dia não correspondem ao calendário."
-        )
-    return True
 
 def validar_tipo(values, expected_types):
     for field_name, value in values.items():
@@ -33,20 +14,38 @@ def validar_tipo(values, expected_types):
             )
     return values
 
+def validar_data(data: str) -> bool:
+    if isinstance(data, datetime):
+        data = data.strftime('%Y-%m-%d')
+    
+    if data and not re.match(r'\d{4}-\d{2}-\d{2}', data):
+        raise HTTPException(
+            status_code=422,
+            detail="Data inválida. O formato esperado é YYYY-MM-DD."
+        )
+    
+    try:
+        datetime.strptime(data, '%Y-%m-%d')
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail="Data inválida. Mês ou dia não correspondem ao calendário."
+        )
+    return True
+
 class PessoaBase(BaseModel):
     nome_completo: str
     cpf: str
     data_nascimento: datetime
 
-    @model_validator(mode='before')
-    def validar_cpf(cls, values):
-        cpf = values.get('cpf')
-        if cpf and not re.match(r'\d{3}\.\d{3}\.\d{3}-\d{2}', cpf):
+    @field_validator('cpf')
+    def validar_cpf(cls, cpf):
+        if not re.match(r'^\d{3}\.\d{3}\.\d{3}-\d{2}$', cpf):
             raise HTTPException(
                 status_code=422,
-                detail="CPF inválido. O formato esperado é XXX.XXX.XXX-XX."
+                detail="CPF inválido. Formato esperado: XXX.XXX.XXX-XX"
             )
-        return values
+        return cpf
     
     @model_validator(mode='before')
     def check_all_required_fields(cls, values):
@@ -62,7 +61,7 @@ class PessoaBase(BaseModel):
     def validar_data(cls, values):
         data_nascimento = values.get('data_nascimento')
         if data_nascimento:
-            validar_data(data_nascimento)  # Chama a função de validação de data
+            validar_data(data_nascimento)
         return values
     
     @model_validator(mode='before')
@@ -91,13 +90,6 @@ class Estagiario(PessoaBase):
     matricula: Optional[str] = None
     data_entrada: datetime
     setor: str
-
-    @model_validator(mode='before')
-    def validar_data(cls, values):
-        data_entrada = values.get('data_entrada')
-        if data_entrada:
-            validar_data(data_entrada)
-        return values
     
     @model_validator(mode='before')
     def validar_tipos(cls, values):
@@ -106,3 +98,10 @@ class Estagiario(PessoaBase):
             "setor": str
         }
         return validar_tipo(values, expected_types)
+    
+    @model_validator(mode='before')
+    def validar_data(cls, values):
+        data_entrada = values.get('data_entrada')
+        if data_entrada:
+            validar_data(data_entrada)
+        return values
