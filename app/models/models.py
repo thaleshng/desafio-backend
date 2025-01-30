@@ -1,6 +1,6 @@
 import re
 from fastapi import HTTPException
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, model_validator
 from typing import List, Optional
 from datetime import datetime
 

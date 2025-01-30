@@ -1,8 +1,8 @@
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from app.models.pessoa import Estagiario
-from app.services.pessoa_service import EstagiarioService
-from app.repositories.pessoa_repository import EstagiarioRepository, MatriculaRepository, CoordenadorRepository
+from app.models import Estagiario
+from app.services import EstagiarioService
+from app.repositories import EstagiarioRepository, MatriculaRepository, CoordenadorRepository
 from typing import Optional
 
 router = APIRouter()

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from app.models.pessoa import PessoaBase
-from app.services.pessoa_service import PessoaService
-from app.repositories.pessoa_repository import PessoaRepository
+from app.models.models import PessoaBase
+from app.services import PessoaService
+from app.repositories import PessoaRepository
 from typing import Optional
 
 router = APIRouter()
