@@ -5,6 +5,8 @@ from app.services import PessoaService
 from app.repositories import PessoaRepository, CoordenadorRepository, EstagiarioRepository
 from typing import Optional
 
+from utils import notify_email
+
 router = APIRouter()
 
 def get_db(request: Request):
@@ -23,6 +25,7 @@ async def create_pessoa(pessoa: PessoaBase, db=Depends(get_db)):
         )
     
     pessoa_id = await pessoa_service.create_pessoa(pessoa)
+    await notify_email("create", {"nome": pessoa.nome_completo, "cpf": pessoa.cpf})
 
     return { "message": "Registro Adicionado com Sucesso!", "pessoa_id": pessoa_id }
 
@@ -115,15 +118,17 @@ async def delete_pessoa(pessoa_id: str, db=Depends(get_db)):
 
     existing_pessoa = await pessoa_repository.get_pessoas({"_id": ObjectId(pessoa_id)})
 
+    cpf_pessoa = existing_pessoa[0]["cpf"]
+    nome_pessoa = existing_pessoa[0]["nome_completo"]
+
     if not existing_pessoa:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Pessoa com ID {pessoa_id} não encontrada para deleção"
         )
 
-    cpf_pessoa = existing_pessoa[0]["cpf"]
-
     deleted_count = await pessoa_service.delete_pessoa(pessoa_id)
+    await notify_email("delete", {"nome": nome_pessoa, "cpf": cpf_pessoa})
 
     if deleted_count == 0:
         raise HTTPException(

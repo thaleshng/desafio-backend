@@ -4,6 +4,7 @@ from app.models import Coordenador, PessoaBase
 from app.services import CoordenadorService
 from app.repositories import PessoaRepository, CoordenadorRepository, MatriculaRepository, EstagiarioRepository
 from typing import Optional
+from utils import notify_email
 
 router = APIRouter()
 
@@ -45,6 +46,7 @@ async def create_coordenador(coordenador: Coordenador, db = Depends(get_db)):
         )
     
     coordenador_id = await coordenador_service.create_coordenador(coordenador)
+    await notify_email("create", {"nome": coordenador.nome_completo, "cpf": coordenador.cpf})
     return {"message": "Coordenador adicionado com sucesso!", "coordenador_id": coordenador_id}
 
 @router.get("/coordenadores", tags=["coordenadores"])
@@ -139,8 +141,10 @@ async def delete_coordenador(coordenador_id: str, db = Depends(get_db)):
     
     existing_coordenador = await coordenador_repository.get_coordenadores({"_id": ObjectId(coordenador_id)})
 
+    cpf_coordenador = existing_coordenador[0]["cpf"]
+    nome_coordenador = existing_coordenador[0]["nome_completo"]
+
     if existing_coordenador:
-        cpf_coordenador = existing_coordenador[0]["cpf"]
         deleted_pessoa_count = await pessoa_repository.delete_pessoa_by_cpf(cpf_coordenador)
 
         if deleted_pessoa_count == 0:
@@ -150,6 +154,7 @@ async def delete_coordenador(coordenador_id: str, db = Depends(get_db)):
             )
         
     deleted_count = await coordenador_service.delete_coordenador(coordenador_id)
+    await notify_email("delete", {"nome": nome_coordenador, "cpf": cpf_coordenador})
 
     if deleted_count == 0:
         raise HTTPException(

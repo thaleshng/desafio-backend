@@ -4,6 +4,7 @@ from app.models import Estagiario, PessoaBase
 from app.services import EstagiarioService
 from app.repositories import PessoaRepository, EstagiarioRepository, MatriculaRepository, CoordenadorRepository
 from typing import Optional
+from utils import notify_email
 
 router = APIRouter()
 
@@ -45,6 +46,7 @@ async def create_estagiario(estagiario: Estagiario, db = Depends(get_db)):
         )
     
     estagiario_id = await estagiario_service.create_estagiario(estagiario)
+    await notify_email("create", {"nome": estagiario.nome_completo, "cpf": estagiario.cpf})
     return {"message": "Estagiário adicionado com sucesso!", "estagiario_id": estagiario_id}
 
 @router.get("/estagiarios", tags=["estagiarios"])
@@ -138,8 +140,10 @@ async def delete_estagiario(estagiario_id: str, db = Depends(get_db)):
     
     existing_estagiario = await estagiario_repository.get_estagiarios({"_id": ObjectId(estagiario_id)})
 
+    cpf_estagiario = existing_estagiario[0]["cpf"]
+    nome_estagiario = existing_estagiario[0]["nome_completo"]
+
     if existing_estagiario:
-        cpf_estagiario = existing_estagiario[0]["cpf"]
         deleted_pessoa_count = await pessoa_repository.delete_pessoa_by_cpf(cpf_estagiario)
 
         if deleted_pessoa_count == 0:
@@ -149,6 +153,7 @@ async def delete_estagiario(estagiario_id: str, db = Depends(get_db)):
             )
         
     deleted_count = await estagiario_service.delete_estagiario(estagiario_id)
+    await notify_email("delete", {"nome": nome_estagiario, "cpf": cpf_estagiario})
 
     if deleted_count == 0:
         raise HTTPException(
