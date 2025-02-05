@@ -1,3 +1,4 @@
 from .pessoa_service import PessoaService
 from .coordenador_service import CoordenadorService
 from .estagiario_service import EstagiarioService
+from .notificacao_service import NotificacaoService

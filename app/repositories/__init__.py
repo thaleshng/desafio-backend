@@ -2,3 +2,4 @@ from .pessoa_repository import PessoaRepository
 from .coordenador_repository import CoordenadorRepository
 from .estagiario_repository import EstagiarioRepository
 from .matricula_repository import MatriculaRepository
+from .notificacao_repository import NotificacaoRepository
